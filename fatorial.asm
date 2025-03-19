@@ -6,10 +6,10 @@ msg:    .asciz "resultado: "
 	.align 2
 	.globl main
 main:
-	addi a7, zero, 5 # leitura do número 
+	addi a7, zero, 5 # 5 == leitura de int 
 	ecall
-	add s0, a0, zero  # guardo o número em s0
-	addi s1, zero, 1 # s1 vai guardar meu resultado. ja inicializo ele com 1 (para casos que o número seja 0 ou 1)
+	add s0, a0, zero  # guardo o número lido em s0
+	addi s1, zero, 1 # s1 vai guardar meu resultado. ja inicializo ele com 1 (para casos que o número lido seja 0 ou 1)
 	
 	
 	beq s0, zero, printa_resultado # se o número recebido (s0) for igual ao conteúdo de zero (que é zero né), pulo pra printar o resultado (beq == branch on equal)
