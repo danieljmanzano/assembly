@@ -12,7 +12,7 @@ main:
 	addi s1, zero, 1 # s1 vai guardar meu resultado. ja inicializo ele com 1 (para casos que o número lido seja 0 ou 1)
 	
 	
-	beq s0, zero, printa_resultado # se o número recebido (s0) for igual ao conteúdo de zero (que é zero né), pulo pra printar o resultado (beq == branch on equal)
+	beq s0, zero, printa_resultado # se o número recebido (s0) for igual ao conteúdo de zero (que é zero né), pulo pra printar o resultado (beq == branch if equal)
 	addi t0, zero, 1 # t0 vai ser meu contador mais pra frente. aqui uso pra ver se o número recebido foi 1
 	beq s0, t0, printa_resultado # se s0 for igual a 1 (que acabei de colocar em t0), pulo pra printar o resultado também 
 	
