@@ -1,7 +1,7 @@
 	.data
 	.align 0
 buffer: .asciz "parabens ze"
-destino:.word # word == 4 bytes, o tanto que preciso para um ponteiro (destino funciona como ponteiro
+destino:.word # word == 4 bytes, o tanto que preciso para um ponteiro (destino funciona como ponteiro)
 
 	.text
 	.align 2
