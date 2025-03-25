@@ -2,7 +2,7 @@
 	.align 0
 buffer: .space 10 # vou usar como entrada
 destino:.space 10 # vou passar pra cá o que recebi na entrada
-quebra:  .asciz "\n"
+quebra: .asciz "\n"
 	
 	.text
 	.align 2
