@@ -21,29 +21,29 @@ loop1: # loop para contar as letras da string (+ '\0')
 	add a0, zero, t1 # coloco o tamanho da string (t1) em a0 para alocar
 	ecall # aqui, vou ter a0 apontando para o primeiro byte do espaço alocado
 	
-	# destino vai apontar para t2, aí vou escrever a string em t2
-	la t2, destino # endereça a string destino no t2
-	sw a0, 0(t2) # armazena o valor de a0 (ponteiro para memória alocada) no endereço apontado por t2. basicamente coloco o destino na memoria alocada
+	la t2, destino # t2 vai estar com o endereço do destino
+	sw a0, 0(t2) # armazena o valor de a0 (ponteiro para memória alocada) no endereço apontado por t2. meio que to colocando o destino apontando pra memoria alocada (destino = a0)
+	# basicamente, essas duas ultimas linhas equivalem a um destino = malloc()
 	la s0, buffer # volto o s0 pro começo da string origem
-	la t2, destino 
-	lw s1, 0(t2)
+	la t2, destino # aqui meio que to só garantindo que t2 tenha o destino mesmo (todo aquele lance de os registradores t serem temporarios, mas aqui é quase ctz que nao precisava disso)
+	lw s1, 0(t2) # le o valor armazenado no endereço de t2 (ou seja, o valor de destino, que é a0, onde ele ta apontando) e coloca em s1. s1 funciona como se fosse o proprio ponteiro destino
 	
 loop2: # t0 vai ser o aux que manda um caracter de uma string pra outra
-	lb t0, 0(s0)
-	sb t0, 0(s1)
-	addi s0, s0, 1
-	addi s1, s1, 1
-	bne t0, zero, loop2
+	lb t0, 0(s0) # pega o caracter do buffer
+	sb t0, 0(s1) # passa para a string destino 
+	addi s0, s0, 1 # anda na string
+	addi s1, s1, 1 # anda na string
+	bne t0, zero, loop2 # enquanto nao for '\0' continuo voltando no loop
 	
 	# impressão da string copiada
-	li a7, 4
-	la t2, destino 
-	lw a0, 0(t2)
-	ecall
+	li a7, 4 # 4 == serviço de impressão de string
+	la t2, destino # denovo, meio que to garantindo que no t2 ta o que eu to pensando (professora falou que é redundante mesmo, mais pra fixar)
+	lw a0, 0(t2) # coloco em a0 o que quero printar
+	ecall 
 	
 	li a7, 10
 	ecall
 	
 # nome autoexplicativo do programa. só refizemos o strcpy usando alocação dinâmica
-# sinceramente, nao entendi bem as linhas de 24 até 28... o codigo funciona mas nao peguei a ideia dessa parte
+# tentando entender o codigo 100%, alguns comentarios talvez sejam errados mas tamo melhorando
 	
