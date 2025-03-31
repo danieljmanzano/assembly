@@ -1,41 +1,86 @@
-	.data
-	.align 0
+.data
+    .align 0
 msg:    .asciz "resultado: "
 
-	.text
-	.align 2
-	.globl main
-main:
-	addi a7, zero, 5 # 5 == leitura de int 
-	ecall
-	add s0, a0, zero  # guardo o número lido em s0
-	addi s1, zero, 1 # s1 vai guardar meu resultado. ja inicializo ele com 1 (para casos que o número lido seja 0 ou 1)
-	
-	
-	beq s0, zero, printa_resultado # se o número recebido (s0) for igual ao conteúdo de zero (que é zero né), pulo pra printar o resultado (beq == branch if equal)
-	addi t0, zero, 1 # t0 vai ser meu contador mais pra frente. aqui uso pra ver se o número recebido foi 1
-	beq s0, t0, printa_resultado # se s0 for igual a 1 (que acabei de colocar em t0), pulo pra printar o resultado também 
-	
-	
-	addi t0, zero, 2 # coloco t0 (meu contador) como 2 para começar no loop aqui embaixo
-loop:
-	mul s1, s1, t0 # multiplica meu s1 pelo contador e guarda o resultado no próprio s1
-	addi t0, t0, 1 # incrementa meu contador
-	ble t0, s0, loop # se t0 <= s0, continuo no loop (ble == branch if less or equal). ou seja, enquanto o contador ainda não chegou no meu número de entrada, continuo no loop
-	
-	
-printa_resultado:
-	addi a7, zero, 4 # 4 == imprimir string
-	la a0, msg # load adress da minha mensagem em a0 pra printar quando chamar o ecall
-	ecall
+.text
+    .align 2
+    .globl main
+    .globl calcular_fatorial
+    .globl imprimir_resultado
 
-	addi a7, zero, 1 # 1 == imprimir um inteiro
-	add a0, zero, s1 # pego o resultado do fatorial (s1) e coloco em a0
-	ecall
-	
-	addi a7, zero, 10 # algo que aprendi na net: isso aqui é tipo um return 0 de assembly. serviço 10 fecha o programa bonito
-	ecall
-		
-# código que calcula o fatorial (não recursivo e não funcional) de um número fornecido. não considera entradas negativas
-# tentando comentar todas as linhas possíveis pra ver se eu guardo as ideias do que to escrevendo #ehtoiss
-	
+# Função principal
+main:
+    # Lê número de entrada
+    addi a7, zero, 5        # serviço 5: leitura de int
+    ecall
+    
+    # Chama função para calcular fatorial
+    jal ra, calcular_fatorial
+    
+    # Chama função para imprimir resultado
+    jal ra, imprimir_resultado
+    
+    # Encerra o programa
+    addi a7, zero, 10       # serviço 10: exit
+    ecall
+
+# Função para calcular fatorial
+# Entrada: a0 = número para calcular fatorial
+# Saída: a0 = resultado do fatorial
+calcular_fatorial:
+    # Salva registradores na pilha
+    addi sp, sp, -12
+    sw ra, 8(sp)
+    sw s0, 4(sp)
+    sw s1, 0(sp)
+    
+    # Inicializações
+    add s0, zero, a0        # guarda o número de entrada em s0
+    addi s1, zero, 1        # s1 guarda o resultado (inicia com 1)
+    
+    # Verifica casos especiais (0! e 1! = 1)
+    beq s0, zero, fim_calculo
+    addi t0, zero, 1
+    beq s0, t0, fim_calculo
+    
+    # Loop de cálculo do fatorial
+    addi t0, zero, 2        # t0 é o contador (começa em 2)
+loop:
+    mul s1, s1, t0          # multiplica resultado pelo contador
+    addi t0, t0, 1          # incrementa contador
+    bge t0, s0, fim_calculo # se contador >= número, termina
+    jal zero, loop          # continua no loop
+
+fim_calculo:
+    add a0, zero, s1        # coloca resultado em a0 para retorno
+    
+    # Restaura registradores
+    lw s1, 0(sp)
+    lw s0, 4(sp)
+    lw ra, 8(sp)
+    addi sp, sp, 12
+    jalr zero, ra, 0        # retorna ao chamador
+
+# Função para imprimir resultado
+# Entrada: a0 = número para imprimir
+imprimir_resultado:
+    # Salva registradores na pilha
+    addi sp, sp, -8
+    sw ra, 4(sp)
+    sw a0, 0(sp)
+    
+    # Imprime mensagem
+    addi a7, zero, 4        # serviço 4: imprimir string
+    lui a0, %hi(msg)        # carrega parte alta do endereço
+    addi a0, a0, %lo(msg)   # carrega parte baixa
+    ecall
+    
+    # Imprime número
+    addi a7, zero, 1        # serviço 1: imprimir int
+    lw a0, 0(sp)            # recupera o número da pilha
+    ecall
+    
+    # Restaura registradores
+    lw ra, 4(sp)
+    addi sp, sp, 8
+    jalr zero, ra, 0        # retorna ao chamador
