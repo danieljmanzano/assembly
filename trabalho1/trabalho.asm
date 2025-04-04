@@ -1,146 +1,101 @@
-.data
-.align 0
-buffer: 	.space 32 # buffer para armazenar a entrada (até 31 caracteres + null)
-erro:   	.asciz "algo inesperado ocorreu. programa encerrando\n"
-operador:   	.byte 0 # variavel que armazena o operador (ah é nada)
-resultado: 	.float 0.0 # variavel que armazena o resultado (ah é nada)
-espera_num:     .word 1 # flag: 0 = espera operador, 1 = espera numero
+	.data
+resultado:  .float 0.0 # guarda o resultado (como float!)     
+operador:   .byte 0 # guarda o operador atual
+msg_erro:   .asciz "Entrada inválida!\n"
 
-.text
-.align 2
+	.text
+	.globl main
 
-le_input:
-	li a7, 8 # serviço de leitura (leio como string)
-    	la a0, buffer # endereço do buffer
-    	li a1, 32 # tamanho máximo da leitura
+main: 
+    	# lê o primeiro numero na inicialização
+    	li a7, 5 # serviço para ler int
+    	ecall
+    
+    	fcvt.s.w fa0, a0 # converte int para float
+    	fmv.s ft0, fa0 # ft0 == acumulador
+
+loop_calculadora:
+    	# lê o operador (ou comando 'u' ou 'f')
+    	li a7, 12 # serviço para ler char
     	ecall
     	
-analisa_input:
-	la a1, buffer
-	lb t0, 0(a1) # carrega o primeiro caractere da entrada
+    	addi t1, a0, 0
+    	ecall # essa ecall a mais é para "eliminar" o \n que se digita depois do caracter. inclusive, por isso uso o t1, e nao o a0 diretamente
+    
+	# verifica se é comando
+    	li t0, 'f'
+    	beq t1, t0, finalizar
+    	li t0, 'u'
+    	beq t1, t0, undo
+    
+    	# verifica se é operador válido
+    	li t0, '+'
+    	beq t1, t0, operacao
+    	li t0, '-'
+    	beq t1, t0, operacao
+    	li t0, '*'
+    	beq t1, t0, operacao
+    	li t0, '/'
+    	beq t1, t0, operacao
+   	 
+	# caso nao tenha sido nada de cima, deu erro
+   	j entrada_invalida
 	
-	# verifica se é um numero
-	li t1, '0'
-	li t2, '9'
-    	blt t0, t1, nao_numero # se t0 < t1, nao é um numero (aí tome branch)
-    	bgt t0, t2, nao_numero # se t0 > t2 tambem tome branch
-    	j eh_numero # caso esteja ali no intervalo 
+operacao:
+	la t1, operador
+    	sb a0, 0(t1) # armazena o operador em t2
+    
+    	# lê o proximo int
+    	li a7, 5            
+    	ecall
+    	fcvt.s.w fa1, a0 # denovo, conversão para float. fa1 sempre pega o novo numero
     	
-nao_numero:
-	# verifica se é um operador. testo todos os operadores possiveis colocando em t1 e comparando com o conteúdo de t0 (entrada)
-	li t1, '+'
-	beq t0, t1, soma
-	li t1, '-'
-	beq t0, t1, subtrai
-	li t1, '*'
-	beq t0, t1, multiplica
-	li t1, '/'
-	beq t0, t1, divide
-	
-	# verifica se é f (finalizar) ou u (undo). coloca em t1 e compara com t0 (a entrada)
-	li t1, 'f'
-	beq t0, t1, finalizar
-	li t1, 'u'
-	beq t0, t1, undo
-
-	j saida_de_erro # caso tenha chegado ate aqui a entrada nao é valida. vou para uma saída de erro
-
-eh_numero:
-	jal atoi
-	fcvt.s.w fa0, a0 # converte inteiro pra float (sim, esse bagulho feio é pra fazer isso). a0 volta armazenando o inteiro que converti em atoi
-
-
+	# executa operação
+	la t1, resultado
+    	flw ft0, 0(t1) # carrega o acumulador. ft0 sempre recebe o resultado corrente (da ultima operação). flw == load word de float
+    	la t1, operador
+    	lb t0, 0(t1) # pega o operador de volta
+    	
+    	# decide a operação
+    	li t1, '+'
+    	beq t0, t1, soma
+    	li t1, '-'
+    	beq t0, t1, subtracao
+    	li t1, '*'
+    	beq t0, t1, multiplicacao
+    	li t1, '/'
+    	beq t0, t1, divisao
 
 soma:
+    	fadd.s ft0, ft0, fa1
+    	j atualiza_resultado
 
+subtracao:
+    	fsub.s ft0, ft0, fa1
+    	j atualiza_resultado
 
+multiplicacao:
+    	fmul.s ft0, ft0, fa1
+    	j atualiza_resultado
 
-
-
-subtrai:
-
-
-
-
-
-multiplica:
-
-
-
-
-
-divide:
-
-
-
-
-
+divisao:
+    	fdiv.s ft0, ft0, fa1
+	
+atualiza_resultado:
+	la t1, resultado
+    	fsw ft0, 0(t1) # coloca o resultado atual guardado (fsw == sw com float)
+    	j loop_calculadora
 
 undo:
+	# aqui nos dá um jeito de implementar o undo com os ponteiros	
+    	j loop_calculadora
 
+entrada_invalida:
+    	li a7, 4
+    	la a0, msg_erro
+    	ecall
+    	j loop_calculadora
 
-
-
-
-
-atoi:
-	la a1, buffer # endereça a entrada
-	li a0, 0 # acumulador
-	li t3, 10 # base decimal
-	li t4, 1 # flag para sinal. caso sem sinal, t4 == 1. caso negativo, t4 == -1
-	
-	# verificando sinal
-	lb t0, 0(a1) # le primeiro caractere
-	li t1, '-' # usado para comparação
-	bne t0, t1, atoi_loop # caso nao seja negativo, vai para a conversão
-	li t4, -1 # caso seja negativo, guardo na flag
-	addi a1,a1, 1 # avanço na string
-	
-atoi_loop:
-	lb t0, 0(a1) # cacrrega o byte atual
-	beqz t0, atoi_fim # caso o byte lido seja null, termina
-	
-	# validação de digito
-	li t5, '0' # usando para comparação em casos de erro (e ali embaixo para colocar certo com base em ascii)
-	li t6, '9' # mesmo de cima
-	blt t1, t5, atoi_fim # caso nao seja digito valido, pulo pro fim
-	bgt t1, t6, atoi_fim # mesmo de cima
-
-	sub t0, t0, t5 # conversão para ascii, t0 = t0 - '0'
-	
-	# aqui to realmente guardando do jeito certo (em decimal) aquilo que eu converti
-	mul a0, a0, t3 # a0 = a0 * 10
-	add a0, a0, t0 # a0 = a0 + t0 
-	
-	addi a1, a1, 1
-	j atoi_loop
-	
-atoi_fim:
-	mul a0, a0, t4 # aplico o sinal que peguei la no começo
-	jr ra # sai da função
-
-
-
-
-
-finalizar: 
-	# só encerra o programa, sem segredo
-	li a7, 10
-	ecall
-
-
-
-
-saida_de_erro: 
-	# imprime minha mensagem de erro e pulo pro finalizar (fecha o programa)
-	li a7, 4
-	la a0, erro
-	ecall
-	
-	j finalizar
-	
-
-
-
-
-
+finalizar:
+    	li a7, 10
+    	ecall
